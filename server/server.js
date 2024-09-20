@@ -14,7 +14,7 @@ const projectRoutes = require('./modules/projectRoutes');
 // middleweres
 app.use(express.json());
 app.use(cors({
-	origin: "https://portfolio-admin.vercel.app"
+	origin: "https://falco-admin.vercel.app"
 }));
 app.use('/api', projectRoutes)
 
