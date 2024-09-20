@@ -14,7 +14,7 @@ const projectRoutes = require('./modules/projectRoutes');
 // middleweres
 app.use(express.json());
 app.use(cors({
-	origin: "https://falco-admin.vercel.app"
+	origin: ["https://falco-admin.vercel.app", "http://localhost:5173", "https://rupamdas.vercel.app"]
 }));
 app.use('/api', projectRoutes)
 
