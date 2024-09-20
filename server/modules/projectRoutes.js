@@ -2,9 +2,11 @@ const projectSchema = require('./projectSchema');
 const router = require('express').Router();
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const streamifier = require('streamifier'); // To handle buffer streaming
 
 // Set up multer to handle file uploads
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.memoryStorage(); // Memory storage doesn't write to disk
+const upload = multer({ storage: storage }); // Use memory storage with multer
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // Your Cloudinary cloud name
@@ -13,16 +15,17 @@ cloudinary.config({
 });
 
 // Function to handle the upload to Cloudinary
-async function uploadImage(imgPath) {
-  try {
-    const result = await cloudinary.uploader.upload(imgPath, {
-      folder: "images",
+async function uploadImageFromBuffer(buffer) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream({ folder: "images" }, (error, result) => {
+      if (result) {
+        resolve(result.secure_url);
+      } else {
+        reject(error);
+      }
     });
-    return result.secure_url;
-  } catch (err) {
-    console.error(err);
-    throw new Error('Failed to upload image');
-  }
+    streamifier.createReadStream(buffer).pipe(uploadStream); // Convert buffer to stream and upload
+  });
 }
 
 // Route for posting a project
@@ -36,8 +39,8 @@ router.post('/post-project', upload.single('file'), async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
 
-    // Upload the file to Cloudinary using the file path
-    const imageUrl = await uploadImage(req.file.path);
+    // Upload the file buffer to Cloudinary
+    const imageUrl = await uploadImageFromBuffer(req.file.buffer);
     
     // Create and save the new project
     const newProj = new projectSchema({
@@ -56,14 +59,15 @@ router.post('/post-project', upload.single('file'), async (req, res) => {
   }
 });
 
-router.get('/get-project', async (req, res)=> {
-	try {
-    const allProjects = await projectSchema.find()
-    res.json(allProjects)
-	} catch(err) {
-		console.error(err);
+// Route to get all projects
+router.get('/get-project', async (req, res) => {
+  try {
+    const allProjects = await projectSchema.find();
+    res.json(allProjects);
+  } catch (err) {
+    console.error(err);
     res.json([]);
-	}
+  }
 });
 
-module.exports = router
+module.exports = router;
