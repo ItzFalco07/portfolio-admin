@@ -39,3 +39,5 @@ app.listen(port, () => {
 app.get('/', (req,res) => {
 	res.send('this is backend')
 })
+
+module.exports = app;
