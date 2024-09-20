@@ -13,7 +13,9 @@ const projectRoutes = require('./modules/projectRoutes');
 
 // middleweres
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+	origin: "https://portfolio-admin.vercel.app"
+}));
 app.use('/api', projectRoutes)
 
 // mongoose connection
